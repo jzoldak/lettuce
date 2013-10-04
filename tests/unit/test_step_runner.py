@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 # <Lettuce - Behaviour Driven Development for python>
 # Copyright (C) <2010-2012>  Gabriel Falcão <gabriel@nacaolivre.org>
 #
@@ -102,17 +102,24 @@ Feature: When using behave_as, the new steps have the same scenario
     Given I have a step which calls the "access the scenario" step with behave_as
 """
 
-FEATURE10 = """ 
-@tag
-Feature: Many scenarios
+FEATURE10 = """
+Feature: Excluding tags
 
+  @skipme
   Scenario: 1st one
     Given I have a defined step
 
+  @tag, @skipme
   Scenario: 2nd one
     Given I have a defined step
-"""
 
+  @tag
+  Scenario: 3rd one
+    Given I have a defined step
+
+  Scenario: 4th one
+    Given I have a defined step
+"""
 
 def step_runner_environ():
     "Make sure the test environment is what is expected"
@@ -238,7 +245,7 @@ def test_steps_are_aware_of_its_definitions():
 
     step1 = scenario_result.steps_passed[0]
 
-    assert_equals(step1.defined_at.line, 124)
+    assert_equals(step1.defined_at.line, 131)
     assert_equals(step1.defined_at.file, core.fs.relpath(__file__.rstrip("c")))
 
 @with_setup(step_runner_environ)
@@ -335,8 +342,8 @@ def test_feature_can_run_only_specified_scenarios_in_tags():
 
 
 @with_setup(step_runner_environ)
-def test_scenarios_inherit_feature_tags():
-    "Tags applied to features are inherited by scenarios"
+def test_excluding_tags():
+    "Scenarios can be excluded from execution by tag"
     feature = Feature.from_string(FEATURE10)
 
     scenarios_ran = []
@@ -345,10 +352,27 @@ def test_scenarios_inherit_feature_tags():
     def just_register(scenario):
         scenarios_ran.append(scenario.name)
 
-    result = feature.run(tags=['tag'])
+    result = feature.run(tags=['-skipme'])
     assert result.scenario_results
 
-    assert_equals(scenarios_ran, ['1st one', '2nd one'])
+    assert_equals(scenarios_ran, ['3rd one', '4th one'])
+
+
+@with_setup(step_runner_environ)
+def test_excluding_tags_takes_precedence():
+    "Excluding tags takes precedence over including them"
+    feature = Feature.from_string(FEATURE10)
+
+    scenarios_ran = []
+
+    @after.each_scenario
+    def just_register(scenario):
+        scenarios_ran.append(scenario.name)
+
+    result = feature.run(tags=['tag', '-skipme'])
+    assert result.scenario_results
+
+    assert_equals(scenarios_ran, ['3rd one'])
 
 
 @with_setup(step_runner_environ)
