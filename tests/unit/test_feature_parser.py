@@ -455,6 +455,19 @@ Feature: three tags in the first scenario
     Then this scenario has three tags
 """
 
+FEATURE24 = """
+@feature-tag
+Feature: feature tags flow through
+
+  Scenario: This is the first scenario
+    Given I am parsed
+    Then this scenario has one tags
+
+  @scenario-tag
+  Scenario: This is the first scenario
+    Given I am parsed
+    Then this scenario has two tags
+"""
 
 def test_feature_has_repr():
     "Feature implements __repr__ nicely"
@@ -857,3 +870,14 @@ def test_feature_first_scenario_tags_extraction():
 
     assert that(feature.scenarios[0].tags).deep_equals([
         'onetag', 'another', '$%^&even-weird_chars'])
+
+
+def test_feature_and_scenario_tags_extraction():
+    "Feature tags should be applied to all its scenarios"
+    feature = Feature.from_string(FEATURE24)
+
+    assert that(feature.scenarios[0].tags).deep_equals([
+        'feature-tag'])
+
+    assert that(feature.scenarios[1].tags).deep_equals([
+        'scenario-tag', 'feature-tag'])
